@@ -10,25 +10,28 @@ function getDirectories(srcPath) {
     fs.statSync(path.join(srcPath, filePath)).isDirectory());
 }
 
-const _ramdaPath = path.dirname(Module._resolveFilename('ramda', merge(new Module, {
-  'paths': Module._nodeModulePaths(process.cwd())
-})));
 
-// ramda folder will be /nodemodules/ramda/dist. We want to remove the dist
-const ramdaPath = _ramdaPath.slice(0, _ramdaPath.lastIndexOf('ramda') + 5);
+export default function resolveModuleWithOpts(opts) {
+  const _ramdaPath = path.dirname(Module._resolveFilename('ramda', merge(new Module, {
+    'paths': Module._nodeModulePaths(opts.path || process.cwd())
+  })));
 
-var methods = fs.readdirSync(path.join(ramdaPath, 'src'))
-    .filter(name => path.extname(name) == '.js')
-    .map(name => path.basename(name, '.js'));
+  // ramda folder will be /nodemodules/ramda/dist. We want to remove the dist
+  const ramdaPath = _ramdaPath.slice(0, _ramdaPath.lastIndexOf('ramda') + 5);
 
-export default function resolveModule(name) {
+  var methods = fs.readdirSync(path.join(ramdaPath, 'src'))
+      .filter(name => path.extname(name) == '.js')
+      .map(name => path.basename(name, '.js'));
 
-  for (var category in methods) {
-    if (contains(name, methods)) {
-      return `ramda/src/${name}`;
+  return function resolveModule(name) {
+
+    for (var category in methods) {
+      if (contains(name, methods)) {
+        return `ramda/src/${name}`;
+      }
     }
-  }
-  throw new Error(`Ramda method ${name} was not a known function
-    Please file a bug if it's my fault https://github.com/megawac/babel-plugin-ramda/issues
-  `);
+    throw new Error(`Ramda method ${name} was not a known function
+      Please file a bug if it's my fault https://github.com/megawac/babel-plugin-ramda/issues
+    `);
+  };
 };

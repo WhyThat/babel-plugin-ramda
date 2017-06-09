@@ -1,4 +1,4 @@
-import resolveModule from './modules';
+import resolveModuleWithOpts from './modules';
 
 const SPECIAL_TYPES = ['isMemberExpression', 'isProperty'];
 
@@ -6,13 +6,18 @@ function isSpecialTypes(t, node) {
     return SPECIAL_TYPES.filter(type => t[type](node)).length > 0;
 }
 
-export default function({ types: t }) {
+export default function({ types: t }, state) {
   // Tracking variables build during the AST pass. We instantiate
   // these in the `Program` visitor in order to support running the
   // plugin in watch mode or on multiple files.
   let ramdas,
       specified,
-      selectedMethods;
+      selectedMethods,
+      resolveModule;
+
+  const opts = state && state.opts
+    ? state.opts
+    : {}
 
   // Import a ramda method and return the computed import identifier
   function importMethod(methodName, file) {
@@ -44,6 +49,7 @@ export default function({ types: t }) {
           specified = Object.create(null);
           // Track the methods that have already been used to prevent dupe imports
           selectedMethods = Object.create(null);
+          resolveModule = resolveModuleWithOpts(opts);
         }
       },
       ImportDeclaration(path) {
